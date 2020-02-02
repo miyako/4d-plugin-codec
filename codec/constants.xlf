@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<xliff version="1.0" xmlns:d4="http://www.4d.com/d4-ns">
+    <header>
+        <note>codec</note>
+    </header>
+    <group resname="themes">
+        <trans-unit id="" resname="DD03A3DB689F4C52A82F92196C88445E" translate="no">
+            <source>codec</source>
+        </trans-unit>
+    </group>
+    <group restype="x-4DK#" d4:groupName="DD03A3DB689F4C52A82F92196C88445E">
+        <trans-unit d4:value="0:L" id="DD03A3DB689F4C52A82F92196C88445E.1">
+            <source>base64_rfc4648</source>
+        </trans-unit>
+        <trans-unit d4:value="1:L" id="DD03A3DB689F4C52A82F92196C88445E.2">
+            <source>base64_url</source>
+        </trans-unit>
+        <trans-unit d4:value="2:L" id="DD03A3DB689F4C52A82F92196C88445E.3">
+            <source>base64_url_unpadded</source>
+        </trans-unit>
+        <trans-unit d4:value="3:L" id="DD03A3DB689F4C52A82F92196C88445E.4">
+            <source>base32_rfc4648</source>
+        </trans-unit>
+        <trans-unit d4:value="4:L" id="DD03A3DB689F4C52A82F92196C88445E.5">
+            <source>base32_crockford</source>
+        </trans-unit>
+        <trans-unit d4:value="5:L" id="DD03A3DB689F4C52A82F92196C88445E.6">
+            <source>base32_hex</source>
+        </trans-unit>
+        <trans-unit d4:value="6:L" id="DD03A3DB689F4C52A82F92196C88445E.7">
+            <source>hex_upper</source>
+        </trans-unit>
+        <trans-unit d4:value="7:L" id="DD03A3DB689F4C52A82F92196C88445E.8">
+            <source>hex_lower</source>
+        </trans-unit>
+    </group>
+</xliff>

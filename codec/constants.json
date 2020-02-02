@@ -1,0 +1,41 @@
+{
+	"themes": [
+		{
+			"theme": "codec",
+			"constants": [
+        {
+            "name": "base64_rfc4648",
+            "value": "0:L"
+        },
+        {
+            "name": "base64_url",
+            "value": "1:L"
+        },
+        {
+            "name": "base64_url_unpadded",
+            "value": "2:L"
+        },
+        {
+            "name": "base32_rfc4648",
+            "value": "3:L"
+        },
+        {
+            "name": "base32_crockford",
+            "value": "4:L"
+        },
+        {
+            "name": "base32_hex",
+            "value": "5:L"
+        },
+        {
+            "name": "hex_upper",
+            "value": "6:L"
+        },
+        {
+            "name": "hex_lower",
+            "value": "7:L"
+        }
+            ]
+        }
+	]
+}

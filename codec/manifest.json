@@ -1,0 +1,16 @@
+{
+    "name": "codec",
+    "id": 20000,
+    "commands": [
+        {
+            "theme": "codec",
+            "syntax": "codec encode(&O;&L):T",
+            "threadSafe": true
+        },
+        {
+            "theme": "codec",
+            "syntax": "codec decode(&T;&L):O",
+            "threadSafe": true
+        }
+    ]
+}
