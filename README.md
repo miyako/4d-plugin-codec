@@ -1,2 +1,2 @@
 # 4d-plugin-codec
-encode or decode data, using [cppcodec](https://github.com/tplgy/cppcodec).
+Encode or decode data, using [cppcodec](https://github.com/tplgy/cppcodec).
