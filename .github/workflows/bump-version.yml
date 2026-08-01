@@ -42,7 +42,11 @@ jobs:
           set -euo pipefail
           PBXPROJ="${XCODE_PROJECT}/project.pbxproj"
 
-          CURRENT=$(grep -m1 'MARKETING_VERSION' "$PBXPROJ" | sed -E 's/.*MARKETING_VERSION = ([0-9]+\.[0-9]+\.[0-9]+);.*/\1/')
+          # `|| true` is deliberate: under `set -e -o pipefail`, if grep finds no match
+          # the pipeline (and this assignment) would abort the whole step immediately --
+          # before the explicit "Could not find..." diagnostic below ever runs. This lets
+          # a no-match fall through to that check instead of failing silently.
+          CURRENT=$(grep -m1 'MARKETING_VERSION' "$PBXPROJ" | sed -E 's/.*MARKETING_VERSION = ([0-9]+\.[0-9]+\.[0-9]+);.*/\1/' || true)
           if [ -z "$CURRENT" ]; then
             echo "Could not find MARKETING_VERSION in $PBXPROJ" >&2
             exit 1
