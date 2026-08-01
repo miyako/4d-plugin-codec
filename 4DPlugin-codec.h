@@ -27,6 +27,8 @@
 #include <cppcodec/hex_upper.hpp>
 #include <cppcodec/hex_lower.hpp>
 
+#include <exception>
+
 #pragma mark -
 
 void codec_encode(PA_PluginParameters params);
@@ -41,7 +43,9 @@ typedef enum
     base32_crockford,
     base32_hex,
     hex_upper,
-    hex_lower
+    hex_lower,
+    
+    codec_last = hex_lower /* keep as the last real entry; used to range-check Param2 before casting to codec_t */
     
 }codec_t;
 

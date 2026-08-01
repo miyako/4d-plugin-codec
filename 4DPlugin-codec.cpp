@@ -50,40 +50,58 @@ void codec_encode(PA_PluginParameters params) {
     Param1.fromParamAtIndex(pParams, 1);
     Param2.fromParamAtIndex(pParams, 2);
     
-    codec_t codec = (codec_t)Param2.getIntValue();
+    PA_long32 codecValue = Param2.getIntValue();
     
     std::vector<uint8_t>data(Param1.getBytesLength());
-    memcpy(&data[0], Param1.getBytesPtr(), data.size());
+    if(!data.empty())
+    {
+        memcpy(data.data(), Param1.getBytesPtr(), data.size());
+    }
     
     std::string code;
     
-    switch (codec) {
-        case base64_rfc4648:
-            code = cppcodec::base64_rfc4648::encode(data);
-            break;
-        case base64_url:
-            code = cppcodec::base64_url::encode(data);
-            break;
-        case base64_url_unpadded:
-            code = cppcodec::base64_url_unpadded::encode(data);
-            break;
-        case base32_rfc4648:
-            code = cppcodec::base32_rfc4648::encode(data);
-            break;
-        case base32_crockford:
-            code = cppcodec::base32_crockford::encode(data);
-            break;
-        case base32_hex:
-            code = cppcodec::base32_hex::encode(data);
-            break;
-        case hex_upper:
-            code = cppcodec::hex_upper::encode(data);
-            break;
-        case hex_lower:
-            code = cppcodec::hex_lower::encode(data);
-            break;
-        default:
-            break;
+    try
+    {
+        if(codecValue >= base64_rfc4648 && codecValue <= codec_last)
+        {
+            codec_t codec = (codec_t)codecValue;
+            
+            switch (codec) {
+                case base64_rfc4648:
+                    code = cppcodec::base64_rfc4648::encode(data);
+                    break;
+                case base64_url:
+                    code = cppcodec::base64_url::encode(data);
+                    break;
+                case base64_url_unpadded:
+                    code = cppcodec::base64_url_unpadded::encode(data);
+                    break;
+                case base32_rfc4648:
+                    code = cppcodec::base32_rfc4648::encode(data);
+                    break;
+                case base32_crockford:
+                    code = cppcodec::base32_crockford::encode(data);
+                    break;
+                case base32_hex:
+                    code = cppcodec::base32_hex::encode(data);
+                    break;
+                case hex_upper:
+                    code = cppcodec::hex_upper::encode(data);
+                    break;
+                case hex_lower:
+                    code = cppcodec::hex_lower::encode(data);
+                    break;
+                default:
+                    break;
+            }
+        }
+        /* else: codecValue out of range -- code stays empty, and we still fall through to setReturn below */
+    }
+    catch(...)
+    {
+        /* Defensive: cppcodec's encoders aren't documented to throw on arbitrary byte input,
+           but if anything ever does, make sure 4D still gets a return value instead of hanging. */
+        code.clear();
     }
     
     returnValue.setUTF8String((const uint8_t *)code.c_str(), (uint32_t)code.length());
@@ -102,43 +120,65 @@ void codec_decode(PA_PluginParameters params) {
     Param1.fromParamAtIndex(pParams, 1);
     Param2.fromParamAtIndex(pParams, 2);
     
-    codec_t codec = (codec_t)Param2.getIntValue();
+    PA_long32 codecValue = Param2.getIntValue();
     
     std::vector<uint8_t>data;
     
     CUTF8String code;
     Param1.copyUTF8String(&code);
     
-    switch (codec) {
-        case base64_rfc4648:
-            data = cppcodec::base64_rfc4648::decode(code);
-            break;
-        case base64_url:
-            data = cppcodec::base64_url::decode(code);
-            break;
-        case base64_url_unpadded:
-            data = cppcodec::base64_url_unpadded::decode(code);
-            break;
-        case base32_rfc4648:
-            data = cppcodec::base32_rfc4648::decode(code);
-            break;
-        case base32_crockford:
-            data = cppcodec::base32_crockford::decode(code);
-            break;
-        case base32_hex:
-            data = cppcodec::base32_hex::decode(code);
-            break;
-        case hex_upper:
-            data = cppcodec::hex_upper::decode(code);
-            break;
-        case hex_lower:
-            data = cppcodec::hex_lower::decode(code);
-            break;
-        default:
-            break;
+    try
+    {
+        if(codecValue >= base64_rfc4648 && codecValue <= codec_last)
+        {
+            codec_t codec = (codec_t)codecValue;
+            
+            switch (codec) {
+                case base64_rfc4648:
+                    data = cppcodec::base64_rfc4648::decode(code);
+                    break;
+                case base64_url:
+                    data = cppcodec::base64_url::decode(code);
+                    break;
+                case base64_url_unpadded:
+                    data = cppcodec::base64_url_unpadded::decode(code);
+                    break;
+                case base32_rfc4648:
+                    data = cppcodec::base32_rfc4648::decode(code);
+                    break;
+                case base32_crockford:
+                    data = cppcodec::base32_crockford::decode(code);
+                    break;
+                case base32_hex:
+                    data = cppcodec::base32_hex::decode(code);
+                    break;
+                case hex_upper:
+                    data = cppcodec::hex_upper::decode(code);
+                    break;
+                case hex_lower:
+                    data = cppcodec::hex_lower::decode(code);
+                    break;
+                default:
+                    break;
+            }
+        }
+        /* else: codecValue out of range -- data stays empty, and we still fall through to setReturn below */
+    }
+    catch(std::exception &)
+    {
+        /* cppcodec's decoders throw (e.g. cppcodec::parse_error and its subclasses) on malformed
+           input -- invalid characters, bad padding, wrong length for the given base. Without this
+           catch, that exception would propagate up to PluginMain's blanket catch(...), which never
+           calls setReturn -- leaving 4D waiting on a return value that never arrives (a freeze, not
+           a clean failure). Falling back to an empty result here guarantees setReturn is still reached. */
+        data.clear();
+    }
+    catch(...)
+    {
+        data.clear();
     }
     
-    returnValue.setBytes((const uint8_t *)&data[0], (uint32_t)data.size());
+    returnValue.setBytes(data.empty() ? nullptr : data.data(), (uint32_t)data.size());
     returnValue.setReturn(pResult);
 }
 
