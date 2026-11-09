@@ -1,6 +1,104 @@
 # 4d-plugin-codec
 Encode or decode data, using [cppcodec](https://github.com/tplgy/cppcodec).
 
+## Manual source version and Build workflows
+
+Run **Bump version** manually on the selected branch with `patch`, `minor`, or
+`major`. It validates source metadata before writing, commits only source version
+changes as a single direct child of the selected dispatch SHA, and pushes only
+that branch. It creates no tag, release, or Build run. A mandatory executable
+pre-push guard requires exactly one update with the originally selected remote
+SHA and literal new commit SHA; concurrent advance, rewind, deletion, or even an
+identical-result update fails. A moved branch requires a fresh dispatch.
+
+Run **Build** separately using the Actions branch selector. It has **zero inputs**
+and every checkout uses the immutable dispatch `github.sha`. Source `X.Y.Z`
+determines `vX.Y.Z`, `codec-X.Y.Z.zip`, and `codec-X.Y.Z.dmg`. Windows x64 is
+built first with the existing MSBuild v143/Windows SDK 10.0 overrides; macOS keeps
+the Default target/configuration, arm64 + x86_64, deployment override 11.0,
+existing resources/dependencies, Developer ID signing, both notarizations, and
+DMG stapling. There is no branch restriction added to Build. Production build,
+signing, notarization, and 4D execution are not part of local regression tests.
+
+Publication has one repository-wide, cross-branch concurrency group with no
+running cancellation. Before native work and again after all native gates it
+checks the exact remote tag and authenticated, fully paginated release lists,
+including drafts. Any existing tag/release, malformed response, authentication,
+404, network, or later-page error stops publication. Creation uses separate
+POSTs: new tag ref at the selected SHA (then exact remote verification), new
+public non-prerelease release, then assets on that newly returned release ID.
+The original policy is retained: release name equals tag, empty body, no
+generated notes. Nothing is reused, overwritten, clobbered, deleted, retried, or
+rolled back automatically.
+
+**Recovery:** inspect the failing run and remote tag, release ID, and uploaded
+assets before taking manual action. A tag creation followed by a release failure
+retains the tag; an upload failure retains the tag, release, and earlier assets.
+Ambiguous responses can also mean creation succeeded remotely. Do not rerun
+expecting repair: availability checks intentionally reject this partial state.
+A maintainer must decide how to recover it manually or use Bump version and a
+fresh Build for a new version.
+
+### Source authority and migration evidence
+
+The default branch was independently verified as `master` through the repository
+API and symbolic `refs/remotes/origin/HEAD`. The original `release.yml` ran on
+`v*.*.*` tag pushes and manual dispatch with a required `tag` input; original
+`bump-version.yml` was manual with the three semantic bump choices. These are the
+only workflows, and neither carried an intentional branch restriction.
+
+History followed back to `0105d856007a59d129df88d6823007432a6b2dc7`
+(`mv`, workflow introduction; no earlier renamed workflow) and
+`fb0a60a952f912c4f7ee556db28e8f3a3b01fda0` explicitly said
+“Bumps MARKETING_VERSION”. That was marketing-only authority, not a reason to
+coordinate an independent build. The later
+`8c2df68ec31ff247a27b6078068e3b6f57ddaf53` header explicitly superseded it:
+“MARKETING_VERSION/CURRENT_PROJECT_VERSION AND Info.plist's
+CFBundleShortVersionString/CFBundleVersion”. Its commit also promised sync and
+added both settings to all six configurations. Its fallback body nevertheless
+updated marketing only, leaving current at 1.0.1 after the subsequent source
+bumps `3e4ebb6` and `b408730` established marketing/source plist 1.0.3.
+
+The migration repairs those six proven stale current settings to the **existing
+1.0.3**, not a new intake version. All three target configurations actually use
+`codec copy-Info.plist`, whose short version became `$(MARKETING_VERSION)` in
+`fb0a60a`; that reference and its CR-only bytes are preserved. The tracked
+`Info.plist` literal is also validated and maintained. Both omit
+`CFBundleVersion`, which stays
+absent. The copied `English.lproj/InfoPlist.strings` overrides the display with
+stale `1.0`; only its two version tokens are repaired to 1.0.3, preserving its
+CR-only format, mode, and `Copyright 2020 miyako.`. The helper validates all six
+settings, both source plists, references, duplicate keys/assignments, and
+localized text before writing; preserves BOM, individual line endings (including
+mixed), quoting, whitespace, modes, absent optional keys, and unrelated bytes.
+Built plist and localized display are checked too, including binary-plist
+localization produced by Xcode. Prebuilt bundles, dependencies, schemas, API
+headers, 4D files/counters, and other native project settings are not version
+inputs.
+
+Full committed prior-art snapshots were fetched and compared:
+`miyako/4d-plugin-arguments@38a45cd0e30dc015ed430e8dd3c95c5c31f4a1fc`
+(coordinated six-config helper, publication/guard, binary-plist localization and
+native stubs),
+`miyako/4d-plugin-process@ec2611e6bbe97e87982cb84bb603462d0458612c`
+(coordinated authority),
+`miyako/4d-plugin-common-string-algorithm@2606a68201866ec9fcbb38b51462d79215f504ef`,
+and `miyako/4d-plugin-window-button@3f14facb9aaaaff0e22eeb8e07531163680c3a8a`
+(independent-build counterexamples). The arguments implementation and suites
+are adapted to codec's actual two source plists, resource layout, original
+toolchains, and copyright rather than transplanting another native project.
+Freshness fixes are limited to invalidating rebuilt products (not committed
+resources or the downloaded Windows artifact), exact actual Windows output and
+artifact paths, separate architecture checks, and requiring both notary results
+to be `Accepted`.
+
+Local regression commands (no real native tools):
+
+```sh
+actionlint
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s .github/tests -v
+```
+
 The `codec` plugin converts binary data to and from text using common encoding schemes — Base64 (standard and URL-safe, padded and unpadded), Base32 (standard, Crockford, and Extended Hex), and hexadecimal (upper- and lower-case). It's a thin 4D wrapper around the [cppcodec](https://github.com/tplgy/cppcodec) C++ library: encoding produces a `Text`, decoding consumes a `Text` and produces a `Blob`.
 
 ## Summary
