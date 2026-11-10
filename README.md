@@ -1,6 +1,74 @@
 # 4d-plugin-codec
 Encode or decode data, using [cppcodec](https://github.com/tplgy/cppcodec).
 
+## Native ownership maintenance
+
+The ownership audit baseline is `a3e9554befd8bfb9c19f3c308ba172597f08b365`.
+Both source and bundled manifests declare only `codec encode(&O;&L):T` and
+`codec decode(&T;&L):O`; `PluginMain` dispatches selectors 1 and 2 accordingly.
+Neither exposes a text array. Array capability metadata is not evidence that
+an array operation actually executes.
+
+The complete first-party native inventory is:
+
+| Surface | Project/include reachability and ownership |
+|---|---|
+| `4DPlugin-codec.cpp/.h` | Both projects compile the dispatcher; includes `C_BLOB.h` and `C_LONGINT.h`. Scalar input bytes/text are copied before conversion; returns use engine content setters or independent BLOB handles. |
+| `4D Plugin API/Classes/C_TEXT.cpp/.h` | Both projects compile it, reached through `C_BLOB.h`; input descriptors are borrowed then copied into C++ strings. `setReturn`/`toParamAtIndex` call `PA_SetUnistring`, not descriptor transfer. CF/Objective-C conversion/path results are released after use. |
+| `C_BLOB.cpp/.h`, `C_LONGINT.cpp/.h`, `C_TYPES.h` in the same directory | Both projects compile the wrappers and include the shared types. BLOB handles are borrowed for reads and newly allocated for returns; integer wrappers own no native string. |
+| `ARRAY_TEXT.cpp/.h` in the same directory | Tracked but not compiled or included by either project. Reads copy borrowed elements; writes create one independent string per accepted transfer, including index zero, without disposing transferred aliases. |
+| `support/4DPlugin-JSON.cpp/.h` | Tracked but not compiled, included or called by either project. Four string setter overloads and the picture setter now initialize Undefined before shallow assignment, avoiding an overwritten initial empty allocation. Scalar property results are copied then cleared; successful mismatched results are also cleared. Failed getter outputs are not read or cleared. |
+| `4D Plugin API/4DPluginAPI.c/.h`, `Flags.h`, `PublicTypes.h`, `PrivateTypes.h`, `EntryPoints.h`, `4DPluginAPI.def` | Bundled SDK/ABI boundary, compiled by both projects; inspected but unchanged. No other first-party native source or header, pointer wrapper, or CPicture wrapper is tracked. |
+
+JSON helper callers must dispose successful `ob_get_c` collection results using
+`PA_DisposeCollection`; the owning handoff intentionally survives disposal of
+the source object. Getter failure/type-default conventions remain unchanged
+(text getter reports false on API failure); these dormant helpers have no
+repository logging/error-notification facility. Stringify independently owns
+its duplicated object argument and clears that argument and its owning return
+after synchronous use. There is no first-party JSON Parse call, asynchronous
+callback, ignored owning command return, or collection-element getter consumer.
+
+SDK provenance: the bundled implementation was introduced by
+`0105d856007a59d129df88d6823007432a6b2dc7` (`mv`), SHA-256
+`5bac571c5c4cafd280fa7f23d775458a23701287e8735be27d4a2190002f4e3f`.
+Its source/header `v14`/`v13` comments do not identify a verified upstream SDK
+release. `PA_SetStringInArray` disposes the old element and shallow-transfers
+only for Unicode arrays with non-null data, indices 0 through the current
+count, and a non-null descriptor pointer. Rejections retain caller ownership.
+Array getters borrow; copy before mutation. `PA_SetStringVariable` also aliases,
+whereas `PA_ReturnString` delegates to the engine content setter.
+`PA_GetObjectProperty`/`PA_GetCollectionElement` explicitly return owning
+variables, with unspecified output on engine failure. SDK internals and
+third-party `include/`, JSON libraries and prebuilt bundles are not fix targets.
+
+Run the macOS actual-source regression without building/publishing a bundle:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 .github/tests/test_ownership.py -v
+CODEC_OWNERSHIP_REVISION=a3e9554befd8bfb9c19f3c308ba172597f08b365 \
+  PYTHONDONTWRITEBYTECODE=1 python3 .github/tests/test_ownership.py -v
+```
+
+The same harness compiles all seven native translation units, including dormant
+helpers and the **complete unchanged SDK**, and substitutes only its `gCall4D`
+engine callback. ASan/UBSan and explicit string/handle/picture/reference balances
+cover allocated/null empties, exact ASCII/BMP/surrogate-pair text, setter
+replacement ownership, successful/mismatched/poisoned-failure property results,
+collection handoff survival, borrowed copies, independent array outputs,
+replacement/shrink/clear/rejections, and all eight actual dispatcher codecs.
+The baseline must fail the named setter/getter leak cases while unchanged
+dispatcher/normal-array cases pass. The shim models synchronous engine copy/ref
+behavior; it is not execution in 4D or Windows. LSan is disabled on macOS and
+explicit balances detect leaks instead. Normal array tests do not certify SDK
+resize allocation-failure behavior: its unconditional count update is a deferred
+SDK/OOM concern, not repaired here. SDK-only application-path/picture-data
+ownership is not inferred from forwarding code.
+
+Both Actions workflows remain manual-only. No release, Deployment build,
+signing, notarization, packaging, workflow dispatch or binary update is required
+for this regression.
+
 ## Manual source version and Build workflows
 
 Run **Bump version** manually on the selected branch with `patch`, `minor`, or
